@@ -1,0 +1,69 @@
+===================================PROMPT:
+
+# Agent instructions (paste at the start of EVERY chat session)
+
+You are connected to my MCP file server. Your only memory between chats is the
+workspace folder. Follow this protocol exactly.
+
+## At session start
+1. Call `read_file` on `PROJECT_STATE.md` (the current truth).
+2. Call `search_text` for "session" in `CHECKPOINTS.md`, then `read_file` only the
+   LAST checkpoint (use offset). Do not read whole logs.
+3. Tell me in 3 lines: the goal, what is done, what you will do now.
+
+## While working
+- Before acting, `append_file` your plan to `PLAN_LOG.md`:
+  `[session N] PLAN: ... `
+- Read a file before editing it. Use `str_replace` for small edits, and pass the
+  `if_version` you got from `read_file`.
+- Use `search_text` instead of reading whole files. Batch independent calls.
+- Never retry a failed call unchanged: read the error, change something, then retry.
+- Record each important choice with `append_file` to `DECISIONS.md`:
+  `[session N] DECISION: ... | WHY: ...`
+- Stop when the task in PROJECT_STATE "Next steps" is done. Do not invent extra work.
+  Maximum 25 tool calls per session.
+
+## At session end
+1. `git_commit` with a clear message.
+2. `append_file` a checkpoint to `CHECKPOINTS.md`:
+   `[session N] DONE: ... | HALF-DONE: ... | FIRST THING NEXT TIME: ...`
+3. Update `PROJECT_STATE.md` (status, file map, next steps).
+
+## Roles (use one per session)
+- **Builder:** may use every tool except `delete_file`.
+- **Reviewer:** read-only. Uses `list_files`, `read_file`, `search_text`, `git_*`
+  and `append_file` (to DECISIONS.md and PLAN_LOG.md only). Never edits project files.
+
+
+
+===================================AI message:
+
+Session start is done. The workspace is fresh, so this is session 1.
+
+Goal: not set yet. PROJECT_STATE.md still holds the blank template, with status “Not started” and no next steps.
+Done: nothing so far. CHECKPOINTS.md has only its header, and DECISIONS.md and PLAN_LOG.md are empty templates.
+Now: I won’t invent work, since “Next steps” is empty. Tell me the goal and which role to use (Builder or Reviewer). I’ll then log the plan to PLAN_LOG.md, fill in PROJECT_STATE.md, and start.
+
+One note for the protocol: search_text takes a folder, not a file, so I can’t search inside CHECKPOINTS.md alone. It searches the whole workspace instead. Once checkpoints exist, I’ll use a narrow query such as session and then read_file the last lines with an offset. You may want to change step 2 of your instructions to say that.
+
+
+
+===================================PROMPT:
+
+start building the to-do app
+
+===================================AI message:
+
+Now the three app files, written in one batch.The to-do app is built and committed, but I haven't opened it in a browser, so none of it has been tested by hand.
+
+It lives in `todo-app/`: `index.html`, `style.css` and `app.js`, plain HTML/CSS/JS with no build step. Open `index.html` to run it. It does the following:
+- **Tasks:** add, tick off, delete, and edit by double-clicking (Enter saves, Esc cancels).
+- **Filters and cleanup:** All / Active / Done filters, a "Clear completed" button, and an "items left" counter.
+- **Persistence:** tasks are saved in the browser, so they survive a reload.
+- **Appearance:** it follows light or dark mode automatically.
+
+I picked plain HTML/JS because you didn't name a stack, and logged that in `DECISIONS.md`. If you'd rather have React or something else, say so and I'll rebuild it.
+
+The first commit also picked up a `claude-test.txt` that was already in the workspace. The handoff files (`PLAN_LOG.md`, `DECISIONS.md`, `CHECKPOINTS.md`, `PROJECT_STATE.md`) are updated and committed. I used about 13 of the 25 tool calls for the session.
+
+Next time, I'd open the page, try every feature and fix anything broken. After that we can decide on extras such as due dates or drag-to-reorder.

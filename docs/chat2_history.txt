@@ -1,0 +1,87 @@
+===================================PROMPT:
+
+
+```markdown
+# Agent instructions (paste at the start of EVERY chat session)
+
+You are connected to my MCP file server. Your only memory between chats is the
+workspace folder. Follow this protocol exactly.
+
+## At session start
+1. Call `read_file` on `PROJECT_STATE.md` (the current truth).
+2. Call `search_text` for "session" in `CHECKPOINTS.md`, then `read_file` only the
+   LAST checkpoint (use offset). Do not read whole logs.
+3. Tell me in 3 lines: the goal, what is done, what you will do now.
+
+## While working
+- Before acting, `append_file` your plan to `PLAN_LOG.md`:
+  `[session N] PLAN: ... `
+- Read a file before editing it. Use `str_replace` for small edits, and pass the
+  `if_version` you got from `read_file`.
+- Use `search_text` instead of reading whole files. Batch independent calls.
+- Never retry a failed call unchanged: read the error, change something, then retry.
+- Record each important choice with `append_file` to `DECISIONS.md`:
+  `[session N] DECISION: ... | WHY: ...`
+- Stop when the task in PROJECT_STATE "Next steps" is done. Do not invent extra work.
+  Maximum 25 tool calls per session.
+
+## At session end
+1. `git_commit` with a clear message.
+2. `append_file` a checkpoint to `CHECKPOINTS.md`:
+   `[session N] DONE: ... | HALF-DONE: ... | FIRST THING NEXT TIME: ...`
+3. Update `PROJECT_STATE.md` (status, file map, next steps).
+
+## Roles (use one per session)
+- **Builder:** may use every tool except `delete_file`.
+- **Reviewer:** read-only. Uses `list_files`, `read_file`, `search_text`, `git_*`
+  and `append_file` (to DECISIONS.md and PLAN_LOG.md only). Never edits project files.
+
+```
+
+
+===================================AI message:
+
+Session start summary (this is session 2):
+
+- **Goal:** A dependency-free to-do app in plain HTML/CSS/JS that runs by opening the file.
+- **Done:** Session 1 built and committed `todo-app/` (index.html, style.css, app.js) with add, complete, double-click edit, delete, All/Active/Done filters, clear completed, items-left counter, localStorage, and dark mode. It has not been tested in a browser yet.
+- **Plan now:** Do a code review of `app.js`, `index.html` and `style.css` for bugs, since I can't open a browser from here. Then ask you whether to add extras.
+
+Two things before I proceed:
+
+1. **Role:** You didn't pick one for this session. Do you want **Builder** (can edit files) or **Reviewer** (read-only, logs only to DECISIONS.md and PLAN_LOG.md)? Builder fits the "fix any bug found" step, so I'll default to it if you don't say otherwise.
+2. **Testing limit:** I can only read the code. You would need to open `todo-app/index.html` yourself to confirm the features work by hand.
+
+Reply with the role (or just "go") and I'll log the plan and start the review.
+
+
+
+===================================PROMPT:
+
+You are the Reviewer, resume from the handoff files.
+
+===================================AI message:
+
+**Session 2 (Reviewer) is done.** I reviewed `index.html`, `app.js` and `style.css` by reading the code only; I have not opened the app in a browser. I found no blocking bugs.
+
+**What checks out**
+- Add, toggle, delete, filters, clear completed, the counter and localStorage persistence all trace correctly.
+- The inline edit can't commit twice when Enter and blur fire together.
+- Storage errors are caught, so the app still works if storage is blocked.
+- Dark mode and the HTML structure look fine.
+
+**Three minor issues for a Builder session, in priority order**
+1. **Editing is double-click only.** There's no keyboard or touch way to edit, which will be awkward on phones. Add an Edit button or an Enter/F2 shortcut.
+2. **`load()` doesn't check what it reads.** One corrupt entry in localStorage (for example `null`) would throw in `render()` and blank the app. Filter the loaded entries to valid task objects.
+3. **Small polish.** The empty message always says "Nothing here yet." even under the Active or Done filters. The disabled "Clear completed" button also has no disabled style.
+
+**Not flagged as bugs:**
+- Focus is lost after a checkbox or delete click, so keyboard users have to tab back into the list.
+- A blank edit reverts the text instead of deleting the task.
+
+**Files touched**
+- I appended the plan to `PLAN_LOG.md` and the findings to `DECISIONS.md`, then committed (`b30145f`).
+- I did not touch `CHECKPOINTS.md` or `PROJECT_STATE.md`, because the Reviewer role only allows appending to `PLAN_LOG.md` and `DECISIONS.md`.
+- The first thing for next time is also in `DECISIONS.md`: a Builder session opens `index.html` in a browser, applies fixes 1–3, then updates `PROJECT_STATE.md` and `CHECKPOINTS.md`.
+
+You'll need to open `todo-app/index.html` yourself before then to confirm the features work by hand.

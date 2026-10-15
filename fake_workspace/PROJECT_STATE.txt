@@ -1,0 +1,20 @@
+# PROJECT_STATE
+
+> Single source of truth. Read this FIRST at the start of every session.
+> Update it at the END of every session.
+
+## Goal
+Build a simple, dependency-free to-do app (plain HTML/CSS/JS, runs by opening the file).
+
+## Status
+Session 1: first version built and committed. Not yet tested in a browser.
+
+## File map
+- todo-app/index.html: page structure (form, filters, list, footer)
+- todo-app/style.css: styling, light and dark mode
+- todo-app/app.js: logic (add, toggle, edit by double-click, delete, filter, clear completed, localStorage)
+- claude-test.txt: pre-existing test file, not part of the app
+
+## Next steps
+1. Open todo-app/index.html in a browser and test every feature; fix any bugs.
+2. Ask the user whether to add extras (due dates, drag-to-reorder, categories).

@@ -1,0 +1,162 @@
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "todo-app.tasks.v1";
+  var tasks = load();
+  var filter = "all";
+
+  var form = document.getElementById("add-form");
+  var input = document.getElementById("new-task");
+  var list = document.getElementById("list");
+  var empty = document.getElementById("empty");
+  var count = document.getElementById("count");
+  var clearBtn = document.getElementById("clear-done");
+  var filterBtns = document.querySelectorAll(".filters button");
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (e) { /* storage unavailable: app still works for this visit */ }
+  }
+
+  function newId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function visible() {
+    return tasks.filter(function (t) {
+      if (filter === "active") return !t.done;
+      if (filter === "done") return t.done;
+      return true;
+    });
+  }
+
+  function render() {
+    list.innerHTML = "";
+    var shown = visible();
+
+    shown.forEach(function (t) {
+      var li = document.createElement("li");
+      li.dataset.id = t.id;
+      if (t.done) li.className = "done";
+
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = t.done;
+      cb.setAttribute("aria-label", "Mark complete");
+
+      var label = document.createElement("span");
+      label.className = "label";
+      label.textContent = t.text;
+      label.title = "Double-click to edit";
+
+      var del = document.createElement("button");
+      del.className = "del";
+      del.type = "button";
+      del.textContent = "\u2715";
+      del.setAttribute("aria-label", "Delete task");
+
+      li.appendChild(cb);
+      li.appendChild(label);
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+
+    var remaining = tasks.filter(function (t) { return !t.done; }).length;
+    count.textContent = remaining + (remaining === 1 ? " item left" : " items left");
+    empty.hidden = shown.length > 0;
+    clearBtn.disabled = !tasks.some(function (t) { return t.done; });
+  }
+
+  function findTask(id) {
+    for (var i = 0; i < tasks.length; i++) if (tasks[i].id === id) return tasks[i];
+    return null;
+  }
+
+  function startEdit(li) {
+    var task = findTask(li.dataset.id);
+    if (!task) return;
+    var label = li.querySelector(".label");
+    var editor = document.createElement("input");
+    editor.type = "text";
+    editor.className = "edit-input";
+    editor.value = task.text;
+    editor.maxLength = 200;
+    li.replaceChild(editor, label);
+    editor.focus();
+    editor.select();
+
+    var finished = false;
+    function commit(apply) {
+      if (finished) return;
+      finished = true;
+      var value = editor.value.trim();
+      if (apply && value) task.text = value;
+      save();
+      render();
+    }
+    editor.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") commit(true);
+      else if (e.key === "Escape") commit(false);
+    });
+    editor.addEventListener("blur", function () { commit(true); });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    tasks.push({ id: newId(), text: text, done: false });
+    input.value = "";
+    save();
+    render();
+  });
+
+  list.addEventListener("change", function (e) {
+    if (e.target.type !== "checkbox") return;
+    var task = findTask(e.target.closest("li").dataset.id);
+    if (task) {
+      task.done = e.target.checked;
+      save();
+      render();
+    }
+  });
+
+  list.addEventListener("click", function (e) {
+    if (!e.target.classList.contains("del")) return;
+    var id = e.target.closest("li").dataset.id;
+    tasks = tasks.filter(function (t) { return t.id !== id; });
+    save();
+    render();
+  });
+
+  list.addEventListener("dblclick", function (e) {
+    if (e.target.classList.contains("label")) startEdit(e.target.closest("li"));
+  });
+
+  clearBtn.addEventListener("click", function () {
+    tasks = tasks.filter(function (t) { return !t.done; });
+    save();
+    render();
+  });
+
+  filterBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      filter = btn.dataset.filter;
+      filterBtns.forEach(function (b) { b.classList.toggle("active", b === btn); });
+      render();
+    });
+  });
+
+  render();
+})();

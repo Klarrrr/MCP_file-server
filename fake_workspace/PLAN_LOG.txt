@@ -1,0 +1,6 @@
+# PLAN_LOG (append-only: use append_file)
+
+Format: `[session N] [time] PLAN: ... | DONE: ...`
+
+[session 1] PLAN: Role=Builder. Build a dependency-free to-do app in todo-app/ (index.html, style.css, app.js). Features: add, complete, edit, delete, filter (all/active/done), clear completed, remaining counter, persist in localStorage. Then git_commit, checkpoint, update PROJECT_STATE.
+[session 2] PLAN: Role=Reviewer (read-only). Read todo-app/index.html, style.css, app.js and review for bugs against the feature list (add, toggle, edit, delete, filter, clear completed, counter, localStorage, dark mode). Report findings; log them in DECISIONS.md. No project files edited.

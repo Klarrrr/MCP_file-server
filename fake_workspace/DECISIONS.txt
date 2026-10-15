@@ -1,0 +1,9 @@
+# DECISIONS (append-only: use append_file)
+
+Format: `[session N] DECISION: ... | WHY: ...`
+
+[session 1] DECISION: Plain HTML/CSS/vanilla JS, no build step, localStorage for persistence | WHY: you gave no stack, so this runs by opening index.html and is easy to change later.
+[session 2] DECISION: Review verdict - no blocking bugs found in todo-app (read-only code review, not browser-tested) | WHY: add/toggle/edit/delete/filter/clear/counter/localStorage paths all trace correctly; edit commit is guarded by a `finished` flag so Enter+blur cannot double-fire.
+[session 2] DECISION: Recommend Builder fix 3 minor issues next session, in this order: (1) editing is double-click only, so no keyboard or touch way to edit - add an Edit button or F2/Enter on the label | WHY: accessibility and mobile gap. (2) load() does not validate task shape, so one corrupt localStorage entry (e.g. null) throws in visible()/render and blanks the app - filter entries to objects with string id/text | WHY: robustness. (3) Empty state always says "Nothing here yet." and disabled "Clear completed" has no disabled style - tailor message per filter and add button:disabled style | WHY: polish.
+[session 2] DECISION: Not flagged as bugs: checkbox/delete focus is lost after render (keyboard users re-tab), blank edit reverts silently instead of deleting | WHY: acceptable v1 behavior, noted for the extras discussion.
+[session 2] DECISION: As Reviewer I did not append to CHECKPOINTS.md or edit PROJECT_STATE.md | WHY: role limits me to appending only DECISIONS.md and PLAN_LOG.md. FIRST THING NEXT TIME: Builder session opens todo-app/index.html in a browser, applies fixes 1-3 above, then updates PROJECT_STATE and CHECKPOINTS.

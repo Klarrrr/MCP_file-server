@@ -1,0 +1,103 @@
+===================================PROMPT:
+new chat
+
+===================================AI message:
+Hi there! What would you like to work on?
+
+===================================PROMPT:
+Use the mcp-files connector to list the files in my workspace.
+
+===================================AI message:
+Loaded tools, used mcp-files integration
+Your workspace has these files:
+
+CHECKPOINTS.md
+DECISIONS.md
+hello.txt
+PLAN_LOG.md
+PROJECT_STATE.md
+test/ (a folder, which appears empty at depth 2)
+I can open any of these, search their text, or check git status for changes.
+
+===================================PROMPT:
+Create a file called claude-test.txt containing "it works", then read it back.
+
+
+===================================AI message:
+Used mcp-files integration, loaded tools
+I created claude-test.txt with the content “it works” and read it back. The file contains exactly that, one line, so the connector can both write and read.
+
+===================================PROMPT:
+Read the file ../../etc/passwd
+
+===================================AI message:
+Used a tool Failed
+The server refused: Path escapes workspace root. The connector blocks path traversal, so ../../etc/passwd can’t be read from outside the workspace.
+
+If you’re testing the server’s sandboxing, you could also try a few other variants:
+
+an absolute path like /etc/passwd
+URL-encoded sequences like ..%2F..%2Fetc%2Fpasswd
+a symlink inside the workspace that points outside it
+The symlink case is the one most often missed, since a check that only looks at the path string won’t catch it.
+
+===================================PROMPT:
+You are connected to my MCP file server. Your only memory between chats is the
+workspace folder. Follow this protocol exactly.
+
+
+===================================AI message:
+Reviewing an embedded protocol prompt from a file server setup.
+Reviewing an embedded protocol prompt from a file server setup.
+Your message came through with the intro only: “Follow this protocol exactly,” but no protocol steps after it. It looks like the paste got cut off.
+
+The workspace already has files that look like a handoff set: PROJECT_STATE.md, PLAN_LOG.md, CHECKPOINTS.md and DECISIONS.md. The write tool’s description also says the last three are append-only, so I’d use append_file for them rather than write_file.
+
+Can you paste the rest of the protocol? Or if it’s already written in one of those files, tell me which and I’ll read it and follow it.
+
+
+===================================PROMPT:
+## At session start
+1. Call `read_file` on `PROJECT_STATE.md` (the current truth).
+2. Call `search_text` for "session" in `CHECKPOINTS.md`, then `read_file` only the
+   LAST checkpoint (use offset). Do not read whole logs.
+3. Tell me in 3 lines: the goal, what is done, what you will do now.
+
+## While working
+- Before acting, `append_file` your plan to `PLAN_LOG.md`:
+  `[session N] PLAN: ... `
+- Read a file before editing it. Use `str_replace` for small edits, and pass the
+  `if_version` you got from `read_file`.
+- Use `search_text` instead of reading whole files. Batch independent calls.
+- Never retry a failed call unchanged: read the error, change something, then retry.
+- Record each important choice with `append_file` to `DECISIONS.md`:
+  `[session N] DECISION: ... | WHY: ...`
+- Stop when the task in PROJECT_STATE "Next steps" is done. Do not invent extra work.
+  Maximum 25 tool calls per session.
+
+## At session end
+1. `git_commit` with a clear message.
+2. `append_file` a checkpoint to `CHECKPOINTS.md`:
+   `[session N] DONE: ... | HALF-DONE: ... | FIRST THING NEXT TIME: ...`
+3. Update `PROJECT_STATE.md` (status, file map, next steps).
+
+## Roles (use one per session)
+- **Builder:** may use every tool except `delete_file`.
+- **Reviewer:** read-only. Uses `list_files`, `read_file`, `search_text`, `git_*`
+  and `append_file` (to DECISIONS.md and PLAN_LOG.md only). Never edits project files.
+
+
+  ===================================AI message:
+Used mcp-files integration
+Session start is done. This is session 1, and the workspace has no real state yet.
+
+Goal: not set. PROJECT_STATE.md says “(not set yet)”.
+Done: nothing. Status is “Not started”, the file map is empty, and CHECKPOINTS.md has only its header, so there is no previous checkpoint to read.
+Now: nothing yet. “Next steps” is empty, and the protocol says not to invent work, so I’m waiting for your instructions.
+My search_text call covered the whole workspace instead of only CHECKPOINTS.md, which doesn’t change the result.
+
+I need two things from you before I act:
+
+Role: Builder or Reviewer?
+Task: what goal and first next step should go into PROJECT_STATE.md?
+Once you answer, I’ll append the plan to PLAN_LOG.md as [session 1] PLAN: ... and begin. claude-test.txt from earlier is a stray file, so tell me if you want it kept or deleted. Deleting needs the Builder role, and the protocol excludes delete_file for Builders, so you’d have to do it yourself.

@@ -1,0 +1,5 @@
+# CHECKPOINTS (append-only: use append_file)
+
+One entry at the END of each session: what is finished, what is half-done, what to do first next time.
+
+[session 1] DONE: Built todo-app/ (index.html, style.css, app.js) with add, complete, edit (double-click), delete, All/Active/Done filter, clear completed, items-left counter, localStorage persistence, dark mode. Committed. | HALF-DONE: Not opened in a browser yet, so untested by hand. | FIRST THING NEXT TIME: Open todo-app/index.html, run through each feature, fix any bug found, then decide on extras (due dates, drag-reorder).
